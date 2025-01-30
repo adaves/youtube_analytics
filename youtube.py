@@ -1,10 +1,11 @@
-# get_youtube_data
+        # get_youtube_data
 
 import os
 from pathlib import Path
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def load_data() -> pd.DataFrame:
@@ -27,7 +28,7 @@ def load_data() -> pd.DataFrame:
     data_path = "channel_statistics.csv"
 
     # Load the csv into a DataFrame with error handling
-    try:
+    try:            
         df = pd.read_csv(data_path)
     except FileNotFoundError:
         raise FileNotFoundError(f"File not found: {data_path}")
@@ -40,20 +41,22 @@ def load_data() -> pd.DataFrame:
     
     return df
 
-def visualize_viewCount(df) -> plt.Figure:
+def visualize_count(df, column: str) -> plt.Figure:
     """
-    This functions plots the data from the `viewCount` column.
+    Creates a bar plot for the specified column from the dataframe.
 
     Args:
-        The dataframe containing the data.
+        df (pd.DataFrame): The dataframe containing the data
+        column (str): The column to visualize ('viewCount', 'subscriberCount', or 'videoCount')
+
     Returns:
-        None
+        plt.Figure: The generated plot figure
     """
     fig, ax = plt.subplots(figsize=(6,4))
-    df.plot(kind='bar', y='viewCount', ax=ax)
+    df.plot(kind='bar', y=column, ax=ax)
     plt.xlabel('Username')
-    plt.ylabel('View Count')
-    plt.title('View Counts by Username')
+    plt.ylabel(f'{column.replace("Count", " Count")}')
+    plt.title(f'{column.replace("Count", " Count")}s by Username')
     plt.xticks(ticks=range(len(df)), 
                labels=df['username'], 
                rotation=45, 
@@ -62,47 +65,31 @@ def visualize_viewCount(df) -> plt.Figure:
     
     return fig
 
-def visualize_subscriberCount(df) -> plt.Figure:
+def correlation_heatmap(df) -> plt.Figure:
     """
-    This functions plots the data from the `subsciberCount` column.
+    This function accepts a df parameter, and builds a heatmap showing data correlation
 
     Args:
-        The dataframe containing the data.
-    Returns:
-        None
-    """
-    fig, ax = plt.subplots(figsize=(6,4))
-    df.plot(kind='bar', y='subscriberCount', ax=ax)
-    plt.xlabel('Username')
-    plt.ylabel('Subscriber Count')
-    plt.title('Subscriber Counts by Username')
-    plt.xticks(ticks=range(len(df)), 
-               labels=df['username'], 
-               rotation=45, 
-               ha='right')
-    plt.tight_layout()
-    
-    return fig
+        The dataframe containing the data
 
-def views_vs_subscribers(df) -> plt.Figure:
-    """
-    this function is dumb, replace it...
+    Returns:
+        A heatmap figure with data correlation values
     """
     fig, ax = plt.subplots(figsize=(8,6))
-    df.plot(kind='scatter', x='subscriberCount', y='viewCount', ax=ax)
-    plt.xlabel('Subscriber count')
-    plt.ylabel('View count')
-    plt.tight_layout()
+    sns.heatmap(df.select_dtypes(include=['float64', 'int64']).corr(), ax=ax)
 
     return fig
+
 
 
 if __name__ == '__main__':
     df = load_data()
-
+    df.drop(columns=['hiddenSubscriberCount'], inplace=True)
     print(df)
 
-    fig1 = visualize_viewCount(df)
-    fig2 = visualize_subscriberCount(df)
-    fig3 = views_vs_subscribers(df)
+    fig1 = visualize_count(df, 'viewCount')
+    fig2 = visualize_count(df, 'subscriberCount')
+    fig3 = visualize_count(df, 'videoCount')
+    fig4 = correlation_heatmap(df)
+
     plt.show()
